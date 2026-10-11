@@ -79,8 +79,10 @@ icons! {
     FormatAlignCenter = 0xe234, "format_align_center";
     FormatAlignLeft = 0xe236, "format_align_left";
     FormatAlignRight = 0xe237, "format_align_right";
+    FormatBold = 0xe238, "format_bold";
     FormatColorFill = 0xe23a, "format_color_fill";
     FormatColorText = 0xe23c, "format_color_text";
+    FormatItalic = 0xe23f, "format_italic";
     FormatStrikethrough = 0xe246, "format_strikethrough";
     FormatUnderlined = 0xe249, "format_underlined";
     Gesture = 0xe155, "gesture";

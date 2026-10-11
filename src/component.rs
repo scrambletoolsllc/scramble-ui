@@ -331,6 +331,24 @@ pub fn tip<'a, Message: 'a>(
     .into()
 }
 
+/// A plain tooltip above `content`, for controls over something the
+/// tooltip would cover below, such as a bar over a text field.
+pub fn tip_above<'a, Message: 'a>(
+    content: impl Into<Element<'a, Message>>,
+    label: impl text::IntoFragment<'a>,
+) -> Element<'a, Message> {
+    tooltip(
+        content,
+        container(font::styled(label, Type::BodySmall))
+            .padding([4, 8])
+            .style(style::tooltip),
+        tooltip::Position::Top,
+    )
+    .gap(4)
+    .delay(TOOLTIP_DELAY)
+    .into()
+}
+
 /// An icon button with a tooltip naming it.
 pub fn tool<'a, Message: Clone + 'a>(
     glyph: Icon,
