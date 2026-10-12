@@ -97,6 +97,7 @@ icons! {
     Image = 0xe3f4, "image";
     Info = 0xe88e, "info";
     InkHighlighter = 0xe6d1, "ink_highlighter";
+    Input = 0xe890, "input";
     KeyboardArrowDown = 0xe313, "keyboard_arrow_down";
     KeyboardArrowUp = 0xe316, "keyboard_arrow_up";
     Lan = 0xeb2f, "lan";
@@ -117,6 +118,7 @@ icons! {
     MoreVert = 0xe5d4, "more_vert";
     NoteAdd = 0xe89c, "note_add";
     OneToOne = 0xefcd, "1x_mobiledata";
+    Output = 0xebbe, "output";
     Pending = 0xef64, "pending";
     Photo = 0xe412, "photo_camera";
     PhotoLibrary = 0xe413, "photo_library";
