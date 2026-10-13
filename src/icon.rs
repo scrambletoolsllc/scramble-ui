@@ -144,7 +144,6 @@ icons! {
     SelectAll = 0xe162, "select_all";
     Sell = 0xf05b, "sell";
     Settings = 0xe8b8, "settings";
-    SettingsRemote = 0xe8c7, "settings_remote";
     Shapes = 0xe602, "shapes";
     Signature = 0xf74c, "signature";
     SmartToy = 0xf06c, "smart_toy";
@@ -162,6 +161,7 @@ icons! {
     Toc = 0xe8de, "toc";
     TopPanelClose = 0xf733, "top_panel_close";
     TopPanelOpen = 0xf732, "top_panel_open";
+    Traffic = 0xe565, "traffic";
     Tune = 0xe429, "tune";
     TwoPager = 0xf51f, "two_pager";
     Undo = 0xe166, "undo";
