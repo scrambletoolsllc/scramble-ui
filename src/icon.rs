@@ -144,6 +144,7 @@ icons! {
     SelectAll = 0xe162, "select_all";
     Sell = 0xf05b, "sell";
     Settings = 0xe8b8, "settings";
+    SettingsRemote = 0xe8c7, "settings_remote";
     Shapes = 0xe602, "shapes";
     Signature = 0xf74c, "signature";
     SmartToy = 0xf06c, "smart_toy";
