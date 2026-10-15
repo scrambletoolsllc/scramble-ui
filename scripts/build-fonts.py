@@ -45,6 +45,10 @@ ICON_TABLE = ROOT / "src/icon.rs"
 # (made-up name in icon.rs, source codepoint, transform).
 DERIVED = {
     "flip rotated a quarter turn": (0xE3E8, "quarter_turn"),
+    # Their arrows pointing left, in, and right, out, rather than up and
+    # down.
+    "input_circle rotated a quarter turn": (0xF71A, "quarter_turn"),
+    "output_circle rotated a quarter turn": (0xF70E, "quarter_turn"),
 }
 
 

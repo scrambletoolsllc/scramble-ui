@@ -98,6 +98,7 @@ icons! {
     Info = 0xe88e, "info";
     InkHighlighter = 0xe6d1, "ink_highlighter";
     Input = 0xe890, "input";
+    InputCircleLeft = 0xe006, "input_circle rotated a quarter turn";
     KeyboardArrowDown = 0xe313, "keyboard_arrow_down";
     KeyboardArrowUp = 0xe316, "keyboard_arrow_up";
     Lan = 0xeb2f, "lan";
@@ -119,6 +120,7 @@ icons! {
     NoteAdd = 0xe89c, "note_add";
     OneToOne = 0xefcd, "1x_mobiledata";
     Output = 0xebbe, "output";
+    OutputCircleRight = 0xe007, "output_circle rotated a quarter turn";
     Pending = 0xef64, "pending";
     Photo = 0xe412, "photo_camera";
     PhotoLibrary = 0xe413, "photo_library";
