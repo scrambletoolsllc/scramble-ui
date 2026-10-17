@@ -5,6 +5,47 @@
 #[cfg(target_os = "linux")]
 pub use linux::*;
 
+use std::sync::OnceLock;
+
+/// Whether the window manager draws a title bar, with its close button,
+/// above the app's windows. Windows and macOS do, and so do most Linux
+/// desktops; tiling Wayland compositors such as Hyprland, niri, river and
+/// dwl agree to draw a window's decorations and then draw only a border,
+/// which Wayland gives an app no way to tell from a desktop that draws a
+/// whole title bar, so they are known by name. Where this is false, an app
+/// shows a close button of its own. `SCRAMBLE_UI_TITLE_BARS=0` or `1`
+/// decides it on a desktop this does not know, such as sway set up without
+/// title bars.
+pub fn draws_title_bars() -> bool {
+    static DRAWS: OnceLock<bool> = OnceLock::new();
+    *DRAWS.get_or_init(|| title_bars_from(|name| std::env::var(name).ok()))
+}
+
+/// The compositors that draw no title bars, as `XDG_CURRENT_DESKTOP`
+/// names them.
+const BARE: [&str; 4] = ["hyprland", "niri", "river", "dwl"];
+
+fn title_bars_from(var: impl Fn(&str) -> Option<String>) -> bool {
+    if let Some(choice) = var("SCRAMBLE_UI_TITLE_BARS") {
+        return choice.trim() != "0";
+    }
+    if cfg!(any(windows, target_os = "macos")) {
+        return true;
+    }
+    // Without Wayland, an X11 window manager places the window, and it
+    // decorates it.
+    if var("WAYLAND_DISPLAY").is_none() {
+        return true;
+    }
+    if var("HYPRLAND_INSTANCE_SIGNATURE").is_some() || var("NIRI_SOCKET").is_some() {
+        return false;
+    }
+    let desktops = var("XDG_CURRENT_DESKTOP")
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    !desktops.split(':').any(|desktop| BARE.contains(&desktop))
+}
+
 #[cfg(not(target_os = "linux"))]
 pub use other::*;
 
@@ -219,5 +260,44 @@ mod other {
                 }
             });
         receiver
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::title_bars_from;
+
+    fn with(vars: &[(&str, &str)]) -> bool {
+        title_bars_from(|name| {
+            vars.iter()
+                .find(|(key, _)| *key == name)
+                .map(|(_, value)| (*value).to_owned())
+        })
+    }
+
+    #[test]
+    #[cfg(not(any(windows, target_os = "macos")))]
+    fn tiling_compositors_draw_no_title_bars() {
+        let wayland = ("WAYLAND_DISPLAY", "wayland-1");
+        assert!(!with(&[wayland, ("XDG_CURRENT_DESKTOP", "Hyprland")]));
+        assert!(!with(&[wayland, ("HYPRLAND_INSTANCE_SIGNATURE", "abc")]));
+        assert!(!with(&[wayland, ("NIRI_SOCKET", "/run/niri.sock")]));
+        assert!(!with(&[wayland, ("XDG_CURRENT_DESKTOP", "river")]));
+        assert!(with(&[wayland, ("XDG_CURRENT_DESKTOP", "GNOME")]));
+        assert!(with(&[wayland, ("XDG_CURRENT_DESKTOP", "KDE")]));
+        assert!(with(&[wayland, ("XDG_CURRENT_DESKTOP", "sway")]));
+        // Under X11 the window manager decorates, whatever the desktop.
+        assert!(with(&[("XDG_CURRENT_DESKTOP", "Hyprland")]));
+    }
+
+    #[test]
+    fn the_variable_decides_first() {
+        let wayland = ("WAYLAND_DISPLAY", "wayland-1");
+        assert!(with(&[
+            wayland,
+            ("XDG_CURRENT_DESKTOP", "Hyprland"),
+            ("SCRAMBLE_UI_TITLE_BARS", "1")
+        ]));
+        assert!(!with(&[("SCRAMBLE_UI_TITLE_BARS", "0")]));
     }
 }
