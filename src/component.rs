@@ -798,8 +798,21 @@ pub fn list_row<'a, Message: Clone + 'a>(
     selected: bool,
     on_press: Option<Message>,
 ) -> Button<'a, Message> {
+    list_row_badged(leading, label, None, indent, selected, on_press)
+}
+
+/// A [`list_row`] with `badge`, a small icon in the accent color right
+/// after its label, marking what kind of item it is.
+pub(crate) fn list_row_badged<'a, Message: Clone + 'a>(
+    leading: Option<Icon>,
+    label: impl text::IntoFragment<'a>,
+    badge: Option<Icon>,
+    indent: f32,
+    selected: bool,
+    on_press: Option<Message>,
+) -> Button<'a, Message> {
     let label = label.into_fragment();
-    let children = list_row_children(leading, label, indent);
+    let children = list_row_children(leading, label, badge, indent);
     list_row_button(super::dir::row(children), selected, on_press)
 }
 
@@ -815,7 +828,7 @@ pub fn content_list_row<'a, Message: Clone + 'a>(
 ) -> Button<'a, Message> {
     let label = label.into_fragment();
     let right_to_left = super::dir::text_is_rtl(&label);
-    let mut children = list_row_children(leading, label, indent);
+    let mut children = list_row_children(leading, label, None, indent);
     if right_to_left {
         children.reverse();
     }
@@ -826,11 +839,12 @@ pub fn content_list_row<'a, Message: Clone + 'a>(
     )
 }
 
-/// A list row's parts in reading order: indent, icon, label, then a space
-/// that keeps them at the start.
+/// A list row's parts in reading order: indent, icon, label, badge, then a
+/// space that keeps them at the start.
 fn list_row_children<'a, Message: 'a>(
     leading: Option<Icon>,
     label: text::Fragment<'a>,
+    badge: Option<Icon>,
     indent: f32,
 ) -> Vec<Element<'a, Message>> {
     let mut children = Vec::new();
@@ -847,9 +861,19 @@ fn list_row_children<'a, Message: 'a>(
             .wrapping(text::Wrapping::None)
             .into(),
     );
+    if let Some(glyph) = badge {
+        children.push(
+            icon::icon(glyph, BADGE_SIZE)
+                .style(super::style::primary_text)
+                .into(),
+        );
+    }
     children.push(Space::new().width(Fill).into());
     children
 }
+
+/// The size of a list row's badge.
+pub(crate) const BADGE_SIZE: u32 = 18;
 
 fn list_row_button<'a, Message: Clone + 'a>(
     row: iced::widget::Row<'a, Message>,

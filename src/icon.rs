@@ -119,6 +119,7 @@ icons! {
     VolumeOff = 0xe04f, "volume_off";
     VolumeUp = 0xe050, "volume_up";
     WidthNormal = 0xf8f6, "width_normal";
+    Flare = 0xe3e4, "flare";
     Flip = 0xe3e8, "flip";
     FlipVertical = 0xe005, "flip rotated a quarter turn";
     FolderOpen = 0xe2c8, "folder_open";

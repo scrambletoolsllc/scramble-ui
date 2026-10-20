@@ -35,6 +35,8 @@ const ARROW_GAP: f32 = 4.0;
 /// spare; with an icon, the icon and the gap after it.
 const ROW_ROOM: f32 = 2.0 * 16.0 + 8.0;
 const ICON_ROOM: f32 = 20.0 + 12.0;
+/// What a badge after an item's label adds: its icon and the row's gap.
+const BADGE_ROOM: f32 = component::BADGE_SIZE as f32 + 12.0;
 
 /// How the button looks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -56,6 +58,8 @@ pub enum Entry<Message> {
         checked: bool,
         /// Choosing it leaves the menu open, as for a style to try.
         stays: bool,
+        /// A small icon after its label, marking what kind of item it is.
+        badge: Option<Icon>,
     },
     /// A line between groups of items.
     Divider,
@@ -118,6 +122,7 @@ impl<Message> Entry<Message> {
             message,
             checked: false,
             stays: false,
+            badge: None,
         }
     }
 
@@ -195,6 +200,16 @@ impl<Message> Entry<Message> {
     }
 
     /// The item shown as the one picked, or not.
+    /// The item with a small icon after its label, in the accent color,
+    /// marking what kind of item it is, as a flare for an effect drawn on
+    /// the graphics card.
+    pub fn badge(mut self, glyph: Icon) -> Self {
+        if let Entry::Item { badge, .. } = &mut self {
+            *badge = Some(glyph);
+        }
+        self
+    }
+
     pub fn checked(mut self, picked: bool) -> Self {
         if let Entry::Item { checked, .. } = &mut self {
             *checked = picked;
@@ -444,10 +459,13 @@ fn natural_width<Message>(entries: &[Entry<Message>]) -> f32 {
     entries
         .iter()
         .map(|entry| match entry {
-            Entry::Item { icon, label, .. } => {
+            Entry::Item {
+                icon, label, badge, ..
+            } => {
                 font::measure(label, Type::LabelLarge)
                     + ROW_ROOM
                     + if icon.is_some() { ICON_ROOM } else { 0.0 }
+                    + if badge.is_some() { BADGE_ROOM } else { 0.0 }
             }
             Entry::Heading(label) => font::measure(label, Type::LabelMedium) + 2.0 * 16.0,
             Entry::Note(note) => font::measure(note, Type::BodyMedium) + 2.0 * 16.0,
@@ -490,9 +508,11 @@ fn entry_view<'a, Message: Clone + 'a>(entry: Entry<Message>) -> Element<'a, Pic
             message,
             checked,
             stays,
-        } => component::list_row(
+            badge,
+        } => component::list_row_badged(
             icon,
             label,
+            badge,
             0.0,
             checked,
             Some(Pick {
@@ -1275,6 +1295,20 @@ mod tests {
             Entry::<u8>::divider().icon(Icon::Close),
             Entry::Divider
         ));
+        assert!(matches!(
+            Entry::item("Prism", 2).badge(Icon::Flare),
+            Entry::Item {
+                badge: Some(Icon::Flare),
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn a_badge_widens_the_menu() {
+        let plain = natural_width(&[Entry::item("Prism", 1)]);
+        let badged = natural_width(&[Entry::item("Prism", 1).badge(Icon::Flare)]);
+        assert_eq!(badged - plain, BADGE_ROOM);
     }
 
     #[test]
