@@ -712,7 +712,31 @@ pub fn text_field<'a, Message: Clone + 'a>(
 pub fn search_bar<'a, Message: Clone + 'a>(
     input: text_input::TextInput<'a, Message>,
     trailing: Vec<Element<'a, Message>>,
-    width: f32,
+    width: impl Into<Length>,
+) -> Element<'a, Message> {
+    let glyph = icon::icon(Icon::Search, 20).style(style::on_surface_variant);
+    pill_field(glyph.into(), 12.0, input, trailing, width)
+}
+
+/// A prompt in a search bar's pill, with `action`, an extra-small icon
+/// button such as Send, where the search icon is; its glyph lines up
+/// with that icon.
+pub fn prompt_bar<'a, Message: Clone + 'a>(
+    action: impl Into<Element<'a, Message>>,
+    input: text_input::TextInput<'a, Message>,
+    width: impl Into<Length>,
+) -> Element<'a, Message> {
+    pill_field(action.into(), 6.0, input, Vec::new(), width)
+}
+
+/// A field in a pill: `leading`, `start` from the pill's start, then
+/// the field and `trailing`.
+fn pill_field<'a, Message: Clone + 'a>(
+    leading: Element<'a, Message>,
+    start: f32,
+    input: text_input::TextInput<'a, Message>,
+    trailing: Vec<Element<'a, Message>>,
+    width: impl Into<Length>,
 ) -> Element<'a, Message> {
     // A text input reads in the interface's direction even inside a bar:
     // the icon at its start, the placeholder on the interface's side.
@@ -726,13 +750,10 @@ pub fn search_bar<'a, Message: Clone + 'a>(
     // With nothing after the field, its end has the room its start does,
     // as text typed in the other direction starts at that end.
     let end = if trailing.is_empty() { 12.0 } else { 4.0 };
-    let mut content = crate::line![
-        icon::icon(Icon::Search, 20).style(style::on_surface_variant),
-        input
-    ]
-    .spacing(4)
-    .align_y(Center)
-    .padding(super::dir::padding(0.0, end, 0.0, 12.0));
+    let mut content = crate::line![leading, input]
+        .spacing(4)
+        .align_y(Center)
+        .padding(super::dir::padding(0.0, end, 0.0, start));
     for element in trailing {
         content = content.push(element);
     }
