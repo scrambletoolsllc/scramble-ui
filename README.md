@@ -23,6 +23,14 @@ Load the fonts at startup with `scramble_ui::font::files()`, and set the
 components' own labels in the app's language with
 `scramble_ui::labels::set`.
 
+## Assistant models
+
+`scramble_ui::assistant` keeps the assistant's models in a file the apps
+share, `scramble/assistant.toml` in the config folder, so a model set up
+in one app is there in the others, and `changes` tells a running app
+when another saved it. The keys are in the system keychain, under
+`keychain_service`.
+
 ## Icons
 
 `src/icon.rs` lists every icon any app draws. After adding one, rebuild

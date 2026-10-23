@@ -3,6 +3,7 @@
 //! dark preference. Shared by Scramble Tools apps.
 
 pub mod appearance;
+pub mod assistant;
 pub mod button;
 pub mod component;
 pub mod desktop;
