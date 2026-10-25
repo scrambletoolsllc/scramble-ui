@@ -1,6 +1,6 @@
 //! M3 Expressive spring motion.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Instant;
 
 /// Stiffness and damping ratio of a spring, from the M3 motion tokens.
@@ -41,6 +41,29 @@ pub fn set_reduced(reduced: bool) {
 
 pub fn reduced() -> bool {
     REDUCED.load(Ordering::Relaxed)
+}
+
+/// Physical pixels to a logical one, as last heard: 1.0 until a window
+/// reports another.
+static SCALE: AtomicU32 = AtomicU32::new(0x3f80_0000);
+
+/// Notes how many physical pixels a logical one spans, so moving
+/// elements step by whole physical pixels. Elements that move learn it
+/// from a window's Rescaled event; an app knowing it sooner can say.
+pub fn set_scale_factor(scale: f32) {
+    if scale.is_finite() && scale > 0.0 {
+        SCALE.store(scale.to_bits(), Ordering::Relaxed);
+    }
+}
+
+/// `offset`, in logical pixels, moved to the nearest whole physical
+/// pixel. Text is drawn on whole pixels, its rows cut down to the pixel
+/// above, while shapes are drawn between them; an element moved by a
+/// fraction would have its text hop a pixel against its shapes, most
+/// visibly as a spring settles.
+pub fn snap(offset: f32) -> f32 {
+    let scale = f32::from_bits(SCALE.load(Ordering::Relaxed));
+    (offset * scale).round() / scale
 }
 
 /// Largest integration step, for stability with stiff springs.
@@ -152,6 +175,14 @@ mod tests {
             peak = peak.max(spring.value);
         }
         peak
+    }
+
+    #[test]
+    fn offsets_snap_to_whole_physical_pixels() {
+        assert_eq!(snap(0.3), 0.0);
+        assert_eq!(snap(-0.3), 0.0);
+        assert_eq!(snap(-0.7), -1.0);
+        assert_eq!(snap(12.6), 13.0);
     }
 
     #[test]

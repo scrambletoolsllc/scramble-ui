@@ -72,9 +72,10 @@ impl<Message> Enter<'_, Message> {
     fn transformation(&self, state: &State, bounds: Rectangle) -> Transformation {
         let remaining = 1.0 - state.progress.value;
         match self.from {
+            // By whole pixels, so the text and the shapes move together.
             From::Offset(x, y) => Transformation::translate(
-                x * bounds.width * remaining,
-                y * bounds.height * remaining,
+                super::motion::snap(x * bounds.width * remaining),
+                super::motion::snap(y * bounds.height * remaining),
             ),
             From::Scale(scale) => {
                 let factor = 1.0 - (1.0 - scale) * remaining;
@@ -148,6 +149,9 @@ impl<'a, Message: 'a> Widget<Message, Theme, iced::Renderer> for Enter<'a, Messa
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        if let Event::Window(window::Event::Rescaled(scale)) = event {
+            super::motion::set_scale_factor(*scale);
+        }
         let state = tree.state.downcast_mut::<State>();
         if !state.progress.is_settled() {
             if let Event::Window(window::Event::RedrawRequested(now)) = event {
