@@ -15,6 +15,10 @@ use super::{Scheme, enter, shape, style};
 /// Height of the docked toolbar at desktop density.
 pub const TOOLBAR_HEIGHT: f32 = 56.0;
 pub const SIDE_SHEET_WIDTH: f32 = 320.0;
+/// A resizable side sheet's width: the default, and the narrowest and
+/// widest its edge can be dragged to.
+pub const SIDE_SHEET_RESIZE: super::resize::Width =
+    super::resize::Width::new(SIDE_SHEET_WIDTH, 280.0, 560.0);
 const TOOLTIP_DELAY: Duration = Duration::from_millis(500);
 
 /// The docked toolbar along the top of a window, or the floating one
@@ -444,7 +448,26 @@ pub fn side_sheet_sized<'a, Message: Clone + 'a>(
     content: impl Into<Element<'a, Message>>,
     width: impl Into<Length>,
 ) -> Element<'a, Message> {
-    sheet(title, on_close, None, content.into(), width.into())
+    sheet(title, on_close, None, content.into(), width.into(), None)
+}
+
+/// A docked side sheet of `width` whose left edge drags to resize it,
+/// for a sheet on the window's right.
+pub fn side_sheet_resizable<'a, Message: Clone + 'a>(
+    title: impl text::IntoFragment<'a>,
+    on_close: Message,
+    content: impl Into<Element<'a, Message>>,
+    width: f32,
+    on_resize: impl Fn(super::resize::Drag) -> Message + 'a,
+) -> Element<'a, Message> {
+    sheet(
+        title,
+        on_close,
+        None,
+        content.into(),
+        width.into(),
+        Some(Box::new(on_resize)),
+    )
 }
 
 /// A docked side sheet with `tabs` under its title, which stay in place
@@ -462,6 +485,7 @@ pub fn side_sheet_tabbed<'a, Message: Clone + 'a>(
         Some(tabs.into()),
         content.into(),
         width.into(),
+        None,
     )
 }
 
@@ -471,6 +495,7 @@ fn sheet<'a, Message: Clone + 'a>(
     tabs: Option<Element<'a, Message>>,
     content: Element<'a, Message>,
     width: Length,
+    on_resize: Option<Box<dyn Fn(super::resize::Drag) -> Message + 'a>>,
 ) -> Element<'a, Message> {
     let header = row![
         font::styled(title, Type::TitleLarge),
@@ -498,7 +523,10 @@ fn sheet<'a, Message: Clone + 'a>(
     .width(width)
     .height(Fill)
     .style(style::chrome);
-    enter::from_right(sheet)
+    match on_resize {
+        Some(on_resize) => enter::from_right(super::resize::on_left_edge(sheet, on_resize)),
+        None => enter::from_right(sheet),
+    }
 }
 
 /// A heading for a group of controls in a sheet.

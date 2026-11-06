@@ -212,6 +212,16 @@ impl<'a, Message: 'a> From<Handle<'a, Message>> for Element<'a, Message> {
     }
 }
 
+/// `panel` with a handle over its left edge, for a panel on the window's
+/// right: the handle lies on the panel's own margin, so no gap opens
+/// between the panel and what is beside it.
+pub fn on_left_edge<'a, Message: 'a>(
+    panel: impl Into<Element<'a, Message>>,
+    on_drag: impl Fn(Drag) -> Message + 'a,
+) -> Element<'a, Message> {
+    iced::widget::stack![panel.into(), handle(on_drag)].into()
+}
+
 /// A panel width, or height, being resized between `min` and `max`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Width {
@@ -232,7 +242,8 @@ impl Width {
         }
     }
 
-    /// Applies a drag of the handle on the panel's right edge.
+    /// Applies a drag of the handle on the panel's right edge, as for a
+    /// panel on the window's left.
     pub fn drag(&mut self, drag: Drag) {
         match drag {
             Drag::Started => self.start = Some(self.value),
@@ -243,6 +254,15 @@ impl Width {
             }
             Drag::Ended => self.start = None,
         }
+    }
+
+    /// Applies a drag of the handle on the panel's left edge, as for a
+    /// panel on the window's right, which widens as it moves left.
+    pub fn drag_left_edge(&mut self, drag: Drag) {
+        self.drag(match drag {
+            Drag::Moved(offset) => Drag::Moved(-offset),
+            drag => drag,
+        });
     }
 }
 
@@ -266,6 +286,19 @@ mod tests {
         width.drag(Drag::Ended);
         width.drag(Drag::Moved(-100.0));
         assert_eq!(width.value, 480.0, "moves outside a drag are ignored");
+    }
+
+    #[test]
+    fn a_left_edge_widens_leftwards() {
+        let mut width = Width::new(320.0, 280.0, 560.0);
+        width.drag_left_edge(Drag::Started);
+        width.drag_left_edge(Drag::Moved(-60.0));
+        assert_eq!(width.value, 380.0);
+        width.drag_left_edge(Drag::Moved(100.0));
+        assert_eq!(width.value, 280.0);
+        width.drag_left_edge(Drag::Moved(-900.0));
+        assert_eq!(width.value, 560.0);
+        width.drag_left_edge(Drag::Ended);
     }
 
     /// The drags a handle sends as the cursor presses at `from`, moves to
