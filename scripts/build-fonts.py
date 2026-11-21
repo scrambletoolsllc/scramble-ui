@@ -12,6 +12,7 @@ Run with: uv run --with fonttools scripts/build-fonts.py
 """
 
 import io
+import math
 import re
 import sys
 import tempfile
@@ -49,7 +50,19 @@ DERIVED = {
     # down.
     "input_circle rotated a quarter turn": (0xF71A, "quarter_turn"),
     "output_circle rotated a quarter turn": (0xF70E, "quarter_turn"),
+    # A network bridge that is a Wi-Fi access point too: the hub, smaller,
+    # under two arcs that rise from its top node.
+    "hub under Wi-Fi arcs": (0xE9F4, "wifi_arcs"),
 }
+
+# The hub under Wi-Fi arcs, in font units: the hub at this scale, moved
+# so its top node centres on the arcs; and the arcs' radii, the width of
+# their strokes, and the angles they span either side of straight up.
+HUB_SCALE = 0.62
+HUB_SHIFT = (182.4, -4.82)
+ARC_RADII = (190, 320)
+ARC_WIDTH = 58
+ARC_SPAN = 45
 
 
 def fetch(url: str, into: Path) -> Path:
@@ -78,6 +91,38 @@ def rename(font: TTFont, family: str) -> None:
             record.string = postscript
 
 
+def arc_contour(pen, centre: tuple[float, float], radius: float) -> None:
+    """Draws an arc around `centre`, ARC_WIDTH wide with round ends, from
+    ARC_SPAN degrees left of straight up to as far right, as one closed
+    contour, clockwise, its curves quadratic, none over 22.5 degrees."""
+    cx, cy = centre
+    half = ARC_WIDTH / 2
+    low, high = 90 - ARC_SPAN, 90 + ARC_SPAN
+
+    def point(at, r, degrees):
+        return (at[0] + r * math.cos(math.radians(degrees)), at[1] + r * math.sin(math.radians(degrees)))
+
+    def curve(at, r, start, end):
+        steps = max(1, math.ceil(abs(end - start) / 22.5))
+        step = (end - start) / steps
+        for n in range(steps):
+            a0 = start + n * step
+            middle = a0 + step / 2
+            control = point(at, r / math.cos(math.radians(step / 2)), middle)
+            pen.qCurveTo(control, point(at, r, a0 + step))
+
+    left = point((cx, cy), radius, high)
+    right = point((cx, cy), radius, low)
+    pen.moveTo(point((cx, cy), radius + half, high))
+    # The outer edge, left to right, then round the right end inward.
+    curve((cx, cy), radius + half, high, low)
+    curve(right, half, low, low - 180)
+    # The inner edge, right to left, then round the left end outward.
+    curve((cx, cy), radius - half, low, high)
+    curve(left, half, high + 180, high)
+    pen.closePath()
+
+
 def add_derived(font: TTFont, codepoint: int, source: int, transform: str) -> None:
     cmap = font.getBestCmap()
     if codepoint in cmap:
@@ -87,14 +132,22 @@ def add_derived(font: TTFont, codepoint: int, source: int, transform: str) -> No
     width, _ = font["hmtx"][source_name]
     ascent = font["hhea"].ascent
     descent = font["hhea"].descent
-    if transform != "quarter_turn":
-        sys.exit(f"unknown transform {transform}")
-    # Rotate 90 degrees about the centre of the icon's em box.
-    centre_x = width / 2
-    centre_y = (ascent + descent) / 2
-    matrix = (0, 1, -1, 0, centre_x + centre_y, centre_y - centre_x)
     pen = TTGlyphPen(glyph_set)
-    glyph_set[source_name].draw(TransformPen(pen, matrix))
+    if transform == "quarter_turn":
+        # Rotate 90 degrees about the centre of the icon's em box.
+        centre_x = width / 2
+        centre_y = (ascent + descent) / 2
+        matrix = (0, 1, -1, 0, centre_x + centre_y, centre_y - centre_x)
+        glyph_set[source_name].draw(TransformPen(pen, matrix))
+    elif transform == "wifi_arcs":
+        dx, dy = HUB_SHIFT
+        glyph_set[source_name].draw(TransformPen(pen, (HUB_SCALE, 0, 0, HUB_SCALE, dx, dy)))
+        # The hub's top node, centred at (480, 840) in its own units.
+        top = (480 * HUB_SCALE + dx, 840 * HUB_SCALE + dy)
+        for radius in ARC_RADII:
+            arc_contour(pen, top, radius)
+    else:
+        sys.exit(f"unknown transform {transform}")
     name = f"derived{codepoint:x}"
     font["glyf"][name] = pen.glyph()
     font["hmtx"][name] = (width, 0)

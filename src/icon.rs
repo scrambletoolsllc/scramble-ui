@@ -141,6 +141,7 @@ icons! {
     History = 0xe8b3, "history";
     HorizontalRule = 0xf108, "horizontal_rule";
     Hub = 0xe9f4, "hub";
+    HubWifi = 0xe008, "hub under Wi-Fi arcs";
     Image = 0xe3f4, "image";
     Info = 0xe88e, "info";
     InkHighlighter = 0xe6d1, "ink_highlighter";
